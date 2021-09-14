@@ -40,7 +40,7 @@ const maxConnections = 8
 // Initializes the pool using functions in this file.
 // Also initializes the Store interface.
 func init() {
-
+	glog.Info("In init dbconnector")
 	Pool, err = setUpDBConnection()
 	if err != nil {
 		glog.Error("Error connecting to db", err)
@@ -55,13 +55,20 @@ func getEnvOrUseDefault(key, fallback string) string {
 }
 
 func GetDBConnection() *pgxpool.Pool {
-	err := validateDBConnection(Pool, time.Now())
-	if err != nil {
-		panic(err)
-	}
-	glog.Info("Connection to db successful")
+	if Pool != nil {
+		err := validateDBConnection(Pool, time.Now())
 
-	return Pool
+		if err != nil {
+			panic(err)
+			glog.Fatal("Connection to db unsuccessful*** END")
+		} else {
+			glog.Info("Connection to db successful")
+		}
+		return Pool
+	} else {
+		glog.Fatal("No Connection to db available. Pool is NIL")
+	}
+	return nil
 }
 
 func setUpDBConnection() (*pgxpool.Pool, error) {
@@ -70,7 +77,7 @@ func setUpDBConnection() (*pgxpool.Pool, error) {
 	DB_NAME := getEnvOrUseDefault("DB_NAME", "hippo")
 	// DB_PASSWORD := url.QueryEscape(getEnvOrUseDefault("DB_PASSWORD", ""))
 
-	DB_PASSWORD := url.QueryEscape(getEnvOrUseDefault("DB_PASSWORD", "esNi;fblfWFTZpo8,QIw[;hI"))
+	DB_PASSWORD := url.QueryEscape(getEnvOrUseDefault("DB_PASSWORD", ""))
 	DB_PORT, err := strconv.Atoi(getEnvOrUseDefault("DB_PORT", "5432"))
 	if err != nil {
 		DB_PORT = 5432
@@ -96,9 +103,9 @@ func setUpDBConnection() (*pgxpool.Pool, error) {
 // Used by the pool to test if redis connections are still okay. If they have been idle for less than a minute,
 // just assumes they are okay. If not, calls PING.
 func validateDBConnection(c *pgxpool.Pool, t time.Time) error {
-	if time.Since(t) < IDLE_TIMEOUT*time.Second {
-		return nil
-	}
+	// if time.Since(t) < IDLE_TIMEOUT*time.Second {
+	// 	return nil
+	// }
 	err := c.Ping(context.Background()) //c.Do("PING")
 	return err
 }

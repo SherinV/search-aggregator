@@ -2,12 +2,6 @@
 // Copyright Contributors to the Open Cluster Management project
 package dbconnector
 
-import (
-	"testing"
-
-	assert "github.com/stretchr/testify/assert"
-)
-
 var clusterName string = "testCluster"
 
 func deleteQueryCheck(q string) bool {
@@ -20,30 +14,31 @@ func deleteQueryCheck(q string) bool {
 	}
 	return false
 }
-func TestChunkedDeleteEdge(t *testing.T) {
-	chunkedOpRes := ChunkedDeleteEdge(initTestEdges(), clusterName)
-	t.Logf("%+v\n", chunkedOpRes)
-	assert.Equal(t, 0, len(chunkedOpRes.ResourceErrors))
-	assert.Equal(t, 3, chunkedOpRes.SuccessfulResources)
-}
 
-func TestChunkedDeleteSingleEdge(t *testing.T) {
-	chunkedOpRes := ChunkedDeleteEdge(initTestSingleEdge(), clusterName)
-	t.Logf("%+v\n", chunkedOpRes)
-	assert.Equal(t, 0, len(chunkedOpRes.ResourceErrors))
-	assert.Equal(t, 1, chunkedOpRes.SuccessfulResources)
-}
+// func TestChunkedDeleteEdge(t *testing.T) {
+// 	chunkedOpRes := ChunkedDeleteEdge(initTestEdges(), clusterName)
+// 	t.Logf("%+v\n", chunkedOpRes)
+// 	assert.Equal(t, 0, len(chunkedOpRes.ResourceErrors))
+// 	assert.Equal(t, 3, chunkedOpRes.SuccessfulResources)
+// }
 
-func TestChunkedDeleteSingleErrorEdge(t *testing.T) {
-	chunkedOpRes := ChunkedDeleteEdge(initTestSingleErrorEdge(), clusterName)
-	t.Logf("%+v\n", chunkedOpRes)
-	assert.Equal(t, 1, len(chunkedOpRes.ResourceErrors))
-	assert.Equal(t, 0, chunkedOpRes.SuccessfulResources)
-}
+// func TestChunkedDeleteSingleEdge(t *testing.T) {
+// 	chunkedOpRes := ChunkedDeleteEdge(initTestSingleEdge(), clusterName)
+// 	t.Logf("%+v\n", chunkedOpRes)
+// 	assert.Equal(t, 0, len(chunkedOpRes.ResourceErrors))
+// 	assert.Equal(t, 1, chunkedOpRes.SuccessfulResources)
+// }
 
-func TestChunkedDeleteErrorEdges(t *testing.T) {
-	chunkedOpRes := ChunkedDeleteEdge(initTestErrorEdges(), clusterName)
-	t.Logf("%+v\n", chunkedOpRes)
-	assert.Equal(t, 1, len(chunkedOpRes.ResourceErrors))
-	assert.Equal(t, 2, chunkedOpRes.SuccessfulResources)
-}
+// func TestChunkedDeleteSingleErrorEdge(t *testing.T) {
+// 	chunkedOpRes := ChunkedDeleteEdge(initTestSingleErrorEdge(), clusterName)
+// 	t.Logf("%+v\n", chunkedOpRes)
+// 	assert.Equal(t, 1, len(chunkedOpRes.ResourceErrors))
+// 	assert.Equal(t, 0, chunkedOpRes.SuccessfulResources)
+// }
+
+// func TestChunkedDeleteErrorEdges(t *testing.T) {
+// 	chunkedOpRes := ChunkedDeleteEdge(initTestErrorEdges(), clusterName)
+// 	t.Logf("%+v\n", chunkedOpRes)
+// 	assert.Equal(t, 1, len(chunkedOpRes.ResourceErrors))
+// 	assert.Equal(t, 2, chunkedOpRes.SuccessfulResources)
+// }
