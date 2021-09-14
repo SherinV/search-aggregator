@@ -11,7 +11,11 @@ Copyright (c) 2020 Red Hat, Inc.
 package dbconnector
 
 import (
-	"github.com/golang/glog"
+	"context"
+	"fmt"
+
+	"github.com/jackc/pgx/v4/pgxpool"
+
 	rg2 "github.com/redislabs/redisgraph-go"
 )
 
@@ -29,24 +33,49 @@ type QueryResult struct {
 
 //type QueryResult rg2.QueryResult
 
-type RedisGraphStoreV2 struct{}
+// type RedisGraphStoreV2 struct{}
+type PostgreSQL struct{}
 
 // Executes the given query against redisgraph.
 // Called by the other functions in this file
 // Not fully implemented
-func (RedisGraphStoreV2) Query(q string) (*rg2.QueryResult, error) {
-	// Get connection from the pool
-	conn := Pool.Get() // This will block if there aren't any valid connections that are available.
-	defer conn.Close()
-	g := rg2.Graph{
-		Conn: conn,
-		Id:   GRAPH_NAME,
-	}
-	result, err := g.Query(q)
-	if err != nil {
-		glog.Error("Error fetching results from RedisGraph V2 : ", err)
-		glog.V(4).Info("Failed query: ", q)
-	}
-	return result, err
+// func (RedisGraphStoreV2) Query(q string) (*rg2.QueryResult, error) {
+// 	// Get connection from the pool
+// 	conn := Pool.Get() // This will block if there aren't any valid connections that are available.
+// 	defer conn.Close()
+// 	g := rg2.Graph{
+// 		Conn: conn,
+// 		Id:   GRAPH_NAME,
+// 	}
+// 	result, err := g.Query(q)
+// 	if err != nil {
+// 		glog.Error("Error fetching results from RedisGraph V2 : ", err)
+// 		glog.V(4).Info("Failed query: ", q)
+// 	}
+// 	return result, err
 
+// }
+
+var database *pgxpool.Pool //this will be defined in pool.go
+
+func (PostgreSQL) Query(q string, printResult bool) {
+
+	// Open the PostgreSQL database.
+	database = dbclient.GetConnection() //this will probably be moved out of function/passed down from whereever connection initially made
+
+	//get conenction from the pool
+	conn := Pool.Get()
+	defer conn.Close()
+
+	rows, err := database.Query(context.Background(), q) //querying database
+	if err != nil {
+		fmt.Println("Error executing query: ", err)
+	}
+
+	for rows.Next() { //printing query rows values optional
+		rowValues, _ := rows.Values()
+		fmt.Println(rowValues)
+	}
+
+	return rows, err
 }
