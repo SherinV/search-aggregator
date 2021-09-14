@@ -12,115 +12,93 @@ Copyright (c) 2020 Red Hat, Inc.
 package dbconnector
 
 import (
-	"crypto/tls"
-	"crypto/x509"
-	"io/ioutil"
-	"net"
+	"context"
+	"fmt"
+	"net/url"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/gomodule/redigo/redis"
-	"github.com/open-cluster-management/search-aggregator/pkg/config"
+	// "github.com/gomodule/redigo/redis"
+	pgxpool "github.com/jackc/pgx/v4/pgxpool"
 )
 
 // A global redis pool for other parts of this package to use
-var Pool *redis.Pool
+// var Pool *redis.Pool
+var Pool *pgxpool.Pool
+var err error
 
 const (
 	IDLE_TIMEOUT = 60 // ReadinessProbe runs every 30 seconds, this keeps the connection alive between probe intervals.
 	GRAPH_NAME   = "search-db"
 )
 
+const maxConnections = 8
+
 // Initializes the pool using functions in this file.
 // Also initializes the Store interface.
 func init() {
-	Pool = &redis.Pool{
-		MaxIdle:      10, // Idle connections are connections that have been returned to the pool.
-		MaxActive:    20, // Active connections = connections in-use + idle connections
-		Dial:         getRedisConnection,
-		TestOnBorrow: validateRedisConnection,
-		Wait:         true,
-	}
-	Store = RedisGraphStoreV2{}
 
+	Pool, err = setUpDBConnection()
+	if err != nil {
+		glog.Error("Error connecting to db", err)
+	}
 }
 
-func getRedisConnection() (redis.Conn, error) {
-	var port string
-	var sslEnabled bool
-
-	host := config.Cfg.RedisHost
-	if config.Cfg.RedisSSHPort != "" {
-		port = config.Cfg.RedisSSHPort
-		sslEnabled = true
-	} else {
-		port = config.Cfg.RedisPort
-		sslEnabled = false
+func getEnvOrUseDefault(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
 	}
+	return fallback
+}
 
-	glog.V(2).Infof("Initializing Redis client with Host: %s, Port: %s, using SSL: %t", host, port, sslEnabled)
-
-	tlsconf := &tls.Config{
-		MinVersion:               tls.VersionTLS12,
-		CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
-		PreferServerCipherSuites: true,
-		CipherSuites: []uint16{
-			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-		},
-		// RootCAs: caCertPool,
-	}
-
-	// Attempt to add RootCAs to tlsconf.
-	caCert, certErr := ioutil.ReadFile("./rediscert/redis.crt")
-	if certErr != nil {
-		if sslEnabled {
-			// If REDIS_SSL_PORT was provided we assume that SSL is required.
-			glog.Error("REDIS_SSH_PORT is configured, but can't load cert. ", certErr)
-			return nil, certErr
-		} else {
-			glog.Warning("Using insecure Redis connection.")
-			glog.Warning("To enable SSL provide REDIS_SSL_PORT and ./rediscert/redis.crt")
-		}
-	} else {
-		caCertPool := x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(caCert)
-		tlsconf.RootCAs = caCertPool
-	}
-
-	redisConn, err := redis.Dial("tcp",
-		net.JoinHostPort(host, port),
-		redis.DialTLSConfig(tlsconf),
-		redis.DialUseTLS(sslEnabled),
-		redis.DialConnectTimeout(30*time.Second))
+func GetDBConnection() *pgxpool.Pool {
+	err := validateDBConnection(Pool, time.Now())
 	if err != nil {
-		glog.Error("Error connecting redis. Original error: ", err)
+		panic(err)
+	}
+	glog.Info("Connection to db successful")
+
+	return Pool
+}
+
+func setUpDBConnection() (*pgxpool.Pool, error) {
+	DB_HOST := getEnvOrUseDefault("DB_HOST", "localhost")
+	DB_USER := getEnvOrUseDefault("DB_USER", "hippo")
+	DB_NAME := getEnvOrUseDefault("DB_NAME", "hippo")
+	// DB_PASSWORD := url.QueryEscape(getEnvOrUseDefault("DB_PASSWORD", ""))
+
+	DB_PASSWORD := url.QueryEscape(getEnvOrUseDefault("DB_PASSWORD", "esNi;fblfWFTZpo8,QIw[;hI"))
+	DB_PORT, err := strconv.Atoi(getEnvOrUseDefault("DB_PORT", "5432"))
+	if err != nil {
+		DB_PORT = 5432
+		glog.Error("Error parsing db port, using default 5432")
+	}
+
+	database_url := fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME)
+	glog.Info("Connecting to PostgreSQL at: ", strings.ReplaceAll(database_url, DB_PASSWORD, "*****"))
+	config, connerr := pgxpool.ParseConfig(database_url)
+	if connerr != nil {
+		glog.Info("Error connecting to DB:", connerr)
+	}
+	config.MaxConns = maxConnections
+	conn, err := pgxpool.ConnectConfig(context.Background(), config)
+
+	if err != nil {
+		glog.Error("Error connecting to database. Original error: ", err)
 		return nil, err
 	}
-
-	// If a password is provided, then use it to authenticate the Redis connection.
-	if config.Cfg.RedisPassword != "" {
-		glog.V(2).Info("Authenticating Redis client using password from REDIS_PASSWORD.")
-		if _, err := redisConn.Do("AUTH", config.Cfg.RedisPassword); err != nil {
-			glog.Error("Error authenticating Redis client. Original error: ", err)
-			connError := redisConn.Close()
-			if connError != nil {
-				glog.Warning("Failed to close redis connection. Original error: ", connError)
-			}
-			return nil, err
-		}
-	} else {
-		glog.Warning("REDIS_PASSWORD wasn't provided. Attempting to communicate without authentication.")
-	}
-
-	return redisConn, nil
+	return conn, nil
 }
 
 // Used by the pool to test if redis connections are still okay. If they have been idle for less than a minute,
 // just assumes they are okay. If not, calls PING.
-func validateRedisConnection(c redis.Conn, t time.Time) error {
+func validateDBConnection(c *pgxpool.Pool, t time.Time) error {
 	if time.Since(t) < IDLE_TIMEOUT*time.Second {
 		return nil
 	}
-	_, err := c.Do("PING")
+	err := c.Ping(context.Background()) //c.Do("PING")
 	return err
 }

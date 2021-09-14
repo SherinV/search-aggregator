@@ -14,16 +14,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-
-	rg2 "github.com/redislabs/redisgraph-go"
+	pgx "github.com/jackc/pgx/v4"
 )
 
 var Store DBStore
 
 // Interface for the DB dependency. Used for mocking rg.
 type DBStore interface {
-	Query(q string) (*rg2.QueryResult, error)
+	Query(q string) (pgx.Rows, error)
 }
 
 type QueryResult struct {
@@ -33,49 +31,24 @@ type QueryResult struct {
 
 //type QueryResult rg2.QueryResult
 
-// type RedisGraphStoreV2 struct{}
 type PostgreSQL struct{}
 
 // Executes the given query against redisgraph.
-// Called by the other functions in this file
-// Not fully implemented
-// func (RedisGraphStoreV2) Query(q string) (*rg2.QueryResult, error) {
-// 	// Get connection from the pool
-// 	conn := Pool.Get() // This will block if there aren't any valid connections that are available.
-// 	defer conn.Close()
-// 	g := rg2.Graph{
-// 		Conn: conn,
-// 		Id:   GRAPH_NAME,
-// 	}
-// 	result, err := g.Query(q)
-// 	if err != nil {
-// 		glog.Error("Error fetching results from RedisGraph V2 : ", err)
-// 		glog.V(4).Info("Failed query: ", q)
-// 	}
-// 	return result, err
+func (PostgreSQL) Query(q string, printResult bool) (pgx.Rows, error) {
 
-// }
-
-var database *pgxpool.Pool //this will be defined in pool.go
-
-func (PostgreSQL) Query(q string, printResult bool) {
-
-	// Open the PostgreSQL database.
-	database = dbclient.GetConnection() //this will probably be moved out of function/passed down from whereever connection initially made
-
-	//get conenction from the pool
-	conn := Pool.Get()
+	//get connection from the pool
+	conn := GetDBConnection()
 	defer conn.Close()
 
-	rows, err := database.Query(context.Background(), q) //querying database
+	rows, err := conn.Query(context.Background(), q) //querying database
 	if err != nil {
 		fmt.Println("Error executing query: ", err)
 	}
 
-	for rows.Next() { //printing query rows values optional
-		rowValues, _ := rows.Values()
-		fmt.Println(rowValues)
-	}
+	// for rows.Next() { //printing query rows values optional
+	// 	rowValues, _ := rows.Values()
+	// 	fmt.Println(rowValues)
+	// }
 
 	return rows, err
 }

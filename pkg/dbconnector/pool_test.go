@@ -12,8 +12,8 @@ import (
 // We need a way to mock RedisGraph.
 
 func Test_getRedisConnection(t *testing.T) {
-	conn, err := getRedisConnection()
+	conn, err := setUpDBConnection()
 
-	assert.Nil(t, conn, "Redis Connection")
-	assert.NotNil(t, err, "Redis Conn Error")
+	assert.Nil(t, conn, "DB Connection")
+	assert.NotNil(t, err, "DB Conn Error")
 }
