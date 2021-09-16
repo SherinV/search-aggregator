@@ -10,21 +10,29 @@
 
 package dbconnector
 
-// import (
-// 	"github.com/golang/glog"
-// 	"github.com/open-cluster-management/search-aggregator/pkg/config"
-// 	rg2 "github.com/redislabs/redisgraph-go"
-// )
+// "github.com/golang/glog"
+// "github.com/open-cluster-management/search-aggregator/pkg/config"
+// rg2 "github.com/redislabs/redisgraph-go"
 
-// const CHUNK_SIZE = 40 // Used for the chunked operations in other files.
+const CHUNK_SIZE = 40 // Used for the chunked operations in other files.
 
-// // Resource - Describes a resource (node)
+// Resource - Describes a resource (node)
 // type Resource struct {
 // 	Kind           string `json:"kind,omitempty"`
 // 	UID            string `json:"uid,omitempty"`
 // 	ResourceString string `json:"resourceString,omitempty"`
 // 	Properties     map[string]interface{}
 // }
+
+type Resource struct {
+	TableName  string
+	UID        string
+	Cluster    string
+	Name       string
+	Properties map[string]interface{}
+	EdgesTo    string
+	EdgesFrom  string
+}
 
 // // Describes a relationship between resources
 // type Edge struct {

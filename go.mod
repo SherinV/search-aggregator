@@ -9,6 +9,7 @@ require (
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/gorilla/mux v1.7.4
+	github.com/jackc/pgx v3.2.0+incompatible // indirect
 	github.com/jackc/pgx/v4 v4.13.0
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kr/text v0.2.0 // indirect

@@ -9,6 +9,8 @@ Copyright (c) 2020 Red Hat, Inc.
 */
 // Copyright Contributors to the Open Cluster Management project
 
+// pool.go will set up database connection and pools by getting user creds and validate connection, then it will create schema and tables for database.
+
 package dbconnector
 
 import (
@@ -25,23 +27,55 @@ import (
 	pgxpool "github.com/jackc/pgx/v4/pgxpool"
 )
 
-// A global redis pool for other parts of this package to use
-// var Pool *redis.Pool
 var Pool *pgxpool.Pool
 var err error
 
 const (
-	IDLE_TIMEOUT = 60 // ReadinessProbe runs every 30 seconds, this keeps the connection alive between probe intervals.
-	GRAPH_NAME   = "search-db"
+	IDLE_TIMEOUT     = 60 // ReadinessProbe runs every 30 seconds, this keeps the connection alive between probe intervals.
+	maxConnections   = 8
+	SINGLE_TABLE     = true
+	CLUSTER_SHARDING = false
+	TOTAL_CLUSTERS   = 100
 )
 
-const maxConnections = 8
+var lastUID string
+var database *pgxpool.Pool
 
-// Initializes the pool using functions in this file.
-// Also initializes the Store interface.
 func init() {
 	glog.Info("In init dbconnector")
-	Pool, err = setUpDBConnection()
+	database, err = setUpDBConnection()
+
+	// start building tabels
+	// database = Pool //set database to connection
+
+	if SINGLE_TABLE {
+
+		if CLUSTER_SHARDING {
+			for i := 0; i < TOTAL_CLUSTERS; i++ {
+				clusterName := fmt.Sprintf("cluster%d", i)
+				dquery := fmt.Sprintf("drop table if exists %s cascade; ", clusterName)
+
+				database.Exec(context.Background(), dquery)
+				database.Exec(context.Background(), "COMMIT TRANSACTION")
+
+				cquery := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (uid TEXT PRIMARY KEY, cluster TEXT, data JSONB, edgesTo TEXT, edgesFrom TEXT)", clusterName)
+
+				_, err := database.Exec(context.Background(), cquery)
+				if err != nil {
+					fmt.Println(err)
+				}
+			}
+		} else { //  single table but not cluster sharding
+			database.Exec(context.Background(), "DROP TABLE resources")
+			database.Exec(context.Background(), "CREATE TABLE IF NOT EXISTS resources (uid TEXT PRIMARY KEY, cluster TEXT, data JSONB, edgesTo TEXT, edgesFrom TEXT))")
+
+		}
+	} else {
+		database.Exec(context.Background(), "CREATE TABLE IF NOT EXISTS resources (uid TEXT PRIMARY KEY, data TEXT)")
+		database.Exec(context.Background(), "CREATE TABLE IF NOT EXISTS relationships (sourceId TEXT, destId TEXT)")
+
+	}
+
 	if err != nil {
 		glog.Error("Error connecting to db", err)
 	}
