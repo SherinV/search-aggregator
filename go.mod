@@ -11,6 +11,7 @@ require (
 	github.com/gorilla/mux v1.7.4
 	github.com/jackc/pgx v3.2.0+incompatible // indirect
 	github.com/jackc/pgx/v4 v4.13.0
+	github.com/jlpadilla/benchmark-postgres v0.0.0-20210902155504-65a47037ff2f
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kr/text v0.2.0 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect

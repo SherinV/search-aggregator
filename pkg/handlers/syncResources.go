@@ -9,20 +9,19 @@
 // */
 // // Copyright Contributors to the Open Cluster Management project
 
-// package handlers
+package handlers
 
-// import (
-// 	"encoding/json"
-// 	"fmt"
-// 	"net/http"
-// 	"time"
+import (
+	// "encoding/json"
+	// "fmt"
+	"net/http"
+	// "time"
 
-// 	"github.com/golang/glog"
-// 	"github.com/gorilla/mux"
-// 	"github.com/open-cluster-management/search-aggregator/pkg/config"
-
-// 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
-// )
+	"github.com/golang/glog"
+	"github.com/gorilla/mux"
+	"github.com/open-cluster-management/search-aggregator/pkg/config"
+	// db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
+)
 
 // // SyncEvent - Object sent by the collector with the resources to change.
 // type SyncEvent struct {
@@ -66,58 +65,59 @@
 // 	Message     string // Often comes out of a golang error using .Error()
 // }
 
-// // SyncResources - Process Add, Update, and Delete events.
-// func SyncResources(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	params := mux.Vars(r)
-// 	clusterName := params["id"]
+// SyncResources - Process Add, Update, and Delete events.
+func SyncResources(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	clusterName := params["id"]
 
-// 	// Limit amount of concurrent requests to prevent overloading Redis.
-// 	// Give priority to the local-cluster, because it's the hub and this is how we debug search.
-// 	// TODO: The next step is to degrade performance instead of rejecting the request.
-// 	//       We will give priority to nodes over edges after reaching certain load.
-// 	//       Will also prioritize small updates over a large resync.
-// 	if len(PendingRequests) >= config.Cfg.RequestLimit && clusterName != "local-cluster" {
-// 		glog.Warningf("Too many pending requests (%d). Rejecting sync from %s", len(PendingRequests), clusterName)
-// 		http.Error(w, "Aggregator has many pending requests, retry later.", http.StatusTooManyRequests)
-// 		return
-// 	}
+	// Limit amount of concurrent requests to prevent overloading Redis.
+	// Give priority to the local-cluster, because it's the hub and this is how we debug search.
+	// TODO: The next step is to degrade performance instead of rejecting the request.
+	//       We will give priority to nodes over edges after reaching certain load.
+	//       Will also prioritize small updates over a large resync.
+	if len(PendingRequests) >= config.Cfg.RequestLimit && clusterName != "local-cluster" {
+		glog.Warningf("Too many pending requests (%d). Rejecting sync from %s", len(PendingRequests), clusterName)
+		http.Error(w, "Aggregator has many pending requests, retry later.", http.StatusTooManyRequests)
+		return
+	}
 
-// 	glog.V(2).Info("Starting SyncResources() for cluster: ", clusterName)
-// 	metrics := InitSyncMetrics(clusterName)
-// 	defer metrics.CompleteSyncEvent()
+	glog.Info("Starting SyncResources() for cluster: ", clusterName)
 
-// 	subscriptionUpdated := false                // flag to decide the time when last suscription was changed
-// 	subscriptionUIDMap := make(map[string]bool) // map to hold exisiting subscription uids
-// 	response := SyncResponse{Version: config.AGGREGATOR_API_VERSION}
+	// 	metrics := InitSyncMetrics(clusterName)
+	// 	defer metrics.CompleteSyncEvent()
 
-// 	// Function that sends the current response and the given status code.
-// 	// If you want to bail out early, make sure to call return right after.
-// 	respond := func(status int) {
-// 		statusMessage := fmt.Sprintf(
-// 			"Responding to cluster %s with requestId %d, status %d, stats: {Added: %d, Updated: %d, Deleted: %d, Edges Added: %d, Edges Deleted: %d, Total Resources: %d, Total Edges: %d}",
-// 			clusterName,
-// 			response.RequestId,
-// 			status,
-// 			response.TotalAdded,
-// 			response.TotalUpdated,
-// 			response.TotalDeleted,
-// 			response.TotalEdgesAdded,
-// 			response.TotalEdgesDeleted,
-// 			response.TotalResources,
-// 			response.TotalEdges,
-// 		)
-// 		if status == http.StatusOK {
-// 			glog.Infof(statusMessage)
-// 		} else {
-// 			glog.Errorf(statusMessage)
-// 		}
-// 		w.WriteHeader(status)
-// 		encodeError := json.NewEncoder(w).Encode(response)
-// 		if encodeError != nil {
-// 			glog.Error("Error responding to SyncEvent:", encodeError, response)
-// 		}
-// 	}
+	// 	subscriptionUpdated := false                // flag to decide the time when last suscription was changed
+	// 	subscriptionUIDMap := make(map[string]bool) // map to hold exisiting subscription uids
+	// 	response := SyncResponse{Version: config.AGGREGATOR_API_VERSION}
+
+	// 	// Function that sends the current response and the given status code.
+	// 	// If you want to bail out early, make sure to call return right after.
+	// 	respond := func(status int) {
+	// 		statusMessage := fmt.Sprintf(
+	// 			"Responding to cluster %s with requestId %d, status %d, stats: {Added: %d, Updated: %d, Deleted: %d, Edges Added: %d, Edges Deleted: %d, Total Resources: %d, Total Edges: %d}",
+	// 			clusterName,
+	// 			response.RequestId,
+	// 			status,
+	// 			response.TotalAdded,
+	// 			response.TotalUpdated,
+	// 			response.TotalDeleted,
+	// 			response.TotalEdgesAdded,
+	// 			response.TotalEdgesDeleted,
+	// 			response.TotalResources,
+	// 			response.TotalEdges,
+	// 		)
+	// 		if status == http.StatusOK {
+	// 			glog.Infof(statusMessage)
+	// 		} else {
+	// 			glog.Errorf(statusMessage)
+	// 		}
+	// 		w.WriteHeader(status)
+	// 		encodeError := json.NewEncoder(w).Encode(response)
+	// 		if encodeError != nil {
+	// 			glog.Error("Error responding to SyncEvent:", encodeError, response)
+	// 		}
+}
 
 // 	var syncEvent SyncEvent
 // 	err := json.NewDecoder(r.Body).Decode(&syncEvent)

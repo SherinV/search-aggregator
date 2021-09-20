@@ -20,6 +20,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
 	"time"
 
 	"github.com/golang/glog"
@@ -34,7 +35,7 @@ const (
 	IDLE_TIMEOUT     = 60 // ReadinessProbe runs every 30 seconds, this keeps the connection alive between probe intervals.
 	maxConnections   = 8
 	SINGLE_TABLE     = true
-	CLUSTER_SHARDING = false
+	CLUSTER_SHARDING = true
 	TOTAL_CLUSTERS   = 100
 )
 
@@ -43,10 +44,28 @@ var database *pgxpool.Pool
 
 func init() {
 	glog.Info("In init dbconnector")
-	database, err = setUpDBConnection()
+	Pool, err = setUpDBConnection()
 
+	database = Pool
+
+	createTables()
+	fmt.Println("Created tables")
+
+	// if database == nil {
+	// 	fmt.Println("nil")
+	// } else {
+	// 	fmt.Println("Not nil")ß
+	// }
+
+	if err != nil {
+		glog.Error("Error connecting to db", err)
+	}
+}
+
+func createTables() {
 	// start building tabels
-	// database = Pool //set database to connection
+
+	fmt.Println("Building tables")
 
 	if SINGLE_TABLE {
 
@@ -66,8 +85,9 @@ func init() {
 				}
 			}
 		} else { //  single table but not cluster sharding
+
 			database.Exec(context.Background(), "DROP TABLE resources")
-			database.Exec(context.Background(), "CREATE TABLE IF NOT EXISTS resources (uid TEXT PRIMARY KEY, cluster TEXT, data JSONB, edgesTo TEXT, edgesFrom TEXT))")
+			database.Exec(context.Background(), "CREATE TABLE IF NOT EXISTS resources (uid TEXT PRIMARY KEY, cluster TEXT, data JSONB, edgesTo TEXT, edgesFrom TEXT)")
 
 		}
 	} else {
@@ -76,10 +96,9 @@ func init() {
 
 	}
 
-	if err != nil {
-		glog.Error("Error connecting to db", err)
-	}
 }
+
+// SELECT table_name FROM information_schema.tables where table_name like 'cluster%' check tables
 
 func getEnvOrUseDefault(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
@@ -93,8 +112,8 @@ func GetDBConnection() *pgxpool.Pool {
 		err := validateDBConnection(Pool, time.Now())
 
 		if err != nil {
-			panic(err)
 			glog.Fatal("Connection to db unsuccessful*** END")
+			panic(err)
 		} else {
 			glog.Info("Connection to db successful")
 		}

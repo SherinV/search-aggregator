@@ -272,26 +272,26 @@ func transformManagedClusterInfo(managedClusterInfo *clusterv1beta1.ManagedClust
 }
 
 // Deletes a cluster resource and all resources from the cluster.
-func processClusterDelete(obj interface{}) {
-	glog.Info("Processing Cluster Delete.")
+// func processClusterDelete(obj interface{}) {
+// 	glog.Info("Processing Cluster Delete.")
 
-	clusterName := obj.(*unstructured.Unstructured).GetName()
-	clusterUID := string("cluster__" + obj.(*unstructured.Unstructured).GetName())
-	glog.Infof("Deleting Cluster resource %s and all resources from the cluster. UID %s", clusterName, clusterUID)
+// 	clusterName := obj.(*unstructured.Unstructured).GetName()
+// 	clusterUID := string("cluster__" + obj.(*unstructured.Unstructured).GetName())
+// 	glog.Infof("Deleting Cluster resource %s and all resources from the cluster. UID %s", clusterName, clusterUID)
 
-	_, err := db.Delete([]string{clusterUID})
-	if err != nil {
-		glog.Error("Error deleting Cluster node with error: ", err)
-	}
-	delClusterResources(clusterUID, clusterName)
-}
+// 	_, err := db.Delete([]string{clusterUID})
+// 	if err != nil {
+// 		glog.Error("Error deleting Cluster node with error: ", err)
+// 	}
+// 	delClusterResources(clusterUID, clusterName)
+// }
 
-// Removes all the resources for a cluster, but doesn't remove the Cluster resource object.
-func delClusterResources(clusterUID string, clusterName string) {
-	_, err := db.DeleteCluster(clusterName)
-	if err != nil {
-		glog.Error("Error deleting current resources for cluster: ", err)
-	} else {
-		db.DeleteClustersCache(clusterUID)
-	}
-}
+// // Removes all the resources for a cluster, but doesn't remove the Cluster resource object.
+// func delClusterResources(clusterUID string, clusterName string) {
+// 	_, err := db.DeleteCluster(clusterName)
+// 	if err != nil {
+// 		glog.Error("Error deleting current resources for cluster: ", err)
+// 	} else {
+// 		db.DeleteClustersCache(clusterUID)
+// 	}
+// }

@@ -14,7 +14,7 @@ package dbconnector
 // "github.com/open-cluster-management/search-aggregator/pkg/config"
 // rg2 "github.com/redislabs/redisgraph-go"
 
-const CHUNK_SIZE = 40 // Used for the chunked operations in other files.
+// const CHUNK_SIZE = 40 // Used for the chunked operations in other files.
 
 // Resource - Describes a resource (node)
 // type Resource struct {
@@ -25,16 +25,18 @@ const CHUNK_SIZE = 40 // Used for the chunked operations in other files.
 // }
 
 type Resource struct {
-	TableName  string
-	UID        string
-	Cluster    string
-	Name       string
-	Properties map[string]interface{}
-	EdgesTo    string
-	EdgesFrom  string
+	Kind           string `json:"kind,omitempty"`
+	ResourceString string `json:"resourceString,omitempty"`
+	TableName      string
+	UID            string
+	Cluster        string
+	Name           string
+	Properties     map[string]interface{}
+	EdgesTo        string
+	EdgesFrom      string
 }
 
-// // Describes a relationship between resources
+// Describes a relationship between resources
 // type Edge struct {
 // 	SourceUID, DestUID   string
 // 	EdgeType             string

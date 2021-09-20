@@ -9,24 +9,24 @@ irrespective of what has been deposited with the U.S. Copyright Office.
 */
 package handlers
 
-import (
-	"testing"
-)
+// import (
+// 	"testing"
+// )
 
-//Checks that multiple clusters can update simultaneously without causing a concurrent map write error.
-func TestHandlerMetrics(t *testing.T) {
+// //Checks that multiple clusters can update simultaneously without causing a concurrent map write error.
+// func TestHandlerMetrics(t *testing.T) {
 
-	go InitClusterMetrics("local-cluster")
-	go InitClusterMetrics("remote-cluster")
-	t.Log("SyncMetrics completed successfully")
-}
+// 	go InitClusterMetrics("local-cluster")
+// 	go InitClusterMetrics("remote-cluster")
+// 	t.Log("SyncMetrics completed successfully")
+// }
 
-// Function to call InitSyncMetrics multiple times to make multiple updates to the map
-func InitClusterMetrics(clusterName string) {
-	i := 1
-	for i < 500 {
-		metrics := InitSyncMetrics(clusterName)
-		metrics.CompleteSyncEvent()
-		i++
-	}
-}
+// // Function to call InitSyncMetrics multiple times to make multiple updates to the map
+// func InitClusterMetrics(clusterName string) {
+// 	i := 1
+// 	for i < 500 {
+// 		metrics := InitSyncMetrics(clusterName)
+// 		metrics.CompleteSyncEvent()
+// 		i++
+// 	}
+// }
