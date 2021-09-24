@@ -24,7 +24,7 @@ package dbconnector
 // 	Properties     map[string]interface{}
 // }
 
-type Resource struct {
+type Record struct {
 	Kind           string `json:"kind,omitempty"`
 	ResourceString string `json:"resourceString,omitempty"`
 	TableName      string
@@ -32,8 +32,8 @@ type Resource struct {
 	Cluster        string
 	Name           string
 	Properties     map[string]interface{}
-	EdgesTo        string
-	EdgesFrom      string
+	// EdgesTo        string
+	// EdgesFrom      string
 }
 
 // Describes a relationship between resources

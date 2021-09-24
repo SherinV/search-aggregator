@@ -5,28 +5,34 @@ module github.com/open-cluster-management/search-aggregator
 go 1.16
 
 require (
+	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
+	github.com/google/gofuzz v1.1.0 // indirect
+	github.com/googleapis/gnostic v0.3.1 // indirect
 	github.com/gorilla/mux v1.7.4
-	github.com/jackc/pgx v3.2.0+incompatible // indirect
+	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/jackc/pgx/v4 v4.13.0
 	github.com/jlpadilla/benchmark-postgres v0.0.0-20210902155504-65a47037ff2f
-	github.com/kennygrant/sanitize v1.2.4
+	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
-	github.com/onsi/ginkgo v1.14.2 // indirect
-	github.com/onsi/gomega v1.10.4 // indirect
-	github.com/open-cluster-management/api v0.0.0-20210409125704-06f2aec1a73f
-	github.com/open-cluster-management/klusterlet-addon-controller v0.0.0-20210510192240-893ce866659b
-	github.com/open-cluster-management/multicloud-operators-foundation v0.0.0-20200629084830-3965fdd47134
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/redislabs/redisgraph-go v2.0.2+incompatible
 	github.com/stretchr/testify v1.7.0
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
+	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
+	google.golang.org/appengine v1.6.5 // indirect
+	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/apimachinery v0.20.0
+	k8s.io/api v0.20.0 // indirect
+	k8s.io/apimachinery v0.20.0 // indirect
 	k8s.io/client-go v13.0.0+incompatible
+	k8s.io/utils v0.0.0-20200327001022-6496210b90e8 // indirect
 )
 
 replace (
