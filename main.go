@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"net/http"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
@@ -44,7 +45,9 @@ func main() {
 	if commit, ok := os.LookupEnv("VCS_REF"); ok {
 		glog.Info("Built from git commit: ", commit)
 	}
+	//establish connection and crete tables:
 	dbconnector.GetDBConnection()
+	
 	// dbconnector.GetIndexes()
 	// go dbconnector.RedisWatcher()
 	// // Watch clusters and sync status to Redis.
@@ -52,6 +55,9 @@ func main() {
 
 	// // Run routine to build intercluster edges
 	// go handlers.BuildInterClusterEdges()
+
+	//insert data into tables:
+	go handlers.SyncResources(w http.ResponseWriter, r *http.Request)
 
 	router := mux.NewRouter()
 
