@@ -12,13 +12,9 @@
 package handlers
 
 import (
-	// "encoding/json"
-	// "fmt"
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	// "time"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
@@ -64,6 +60,7 @@ type SyncResponse struct {
 }
 
 var pool *pgxpool.Pool
+
 const TOTAL_CLUSTERS = 100
 const CLUSTER_SHARDING bool = true
 
@@ -75,16 +72,22 @@ const CLUSTER_SHARDING bool = true
 
 // SyncResources - Process Add, Update, and Delete events.
 func SyncResources(w http.ResponseWriter, r *http.Request) {
+
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	clusterName := params["id"]
+
+	fmt.Println("params:", params["uid"]) //returns empty
+
+	clusterName := params["uid"]
+
+	fmt.Println(clusterName)
 
 	// Limit amount of concurrent requests to prevent overloading Redis.
 	// Give priority to the local-cluster, because it's the hub and this is how we debug search.
 	// TODO: The next step is to degrade performance instead of rejecting the request.
 	//       We will give priority to nodes over edges after reaching certain load.
 	//       Will also prioritize small updates over a large resync.
-	if len(PendingRequests) >= config.Cfg.RequestLimit && clusterName != "local-cluster" {
+	if len(PendingRequests) >= config.Cfg.RequestLimit && clusterName != "local-cluster" { //start here
 		glog.Warningf("Too many pending requests (%d). Rejecting sync from %s", len(PendingRequests), clusterName)
 		http.Error(w, "Aggregator has many pending requests, retry later.", http.StatusTooManyRequests)
 		return
@@ -98,9 +101,11 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	// 	subscriptionUpdated := false                // flag to decide the time when last suscription was changed
 	// 	subscriptionUIDMap := make(map[string]bool) // map to hold exisiting subscription uids
 	response := SyncResponse{Version: config.AGGREGATOR_API_VERSION}
+	fmt.Println("Response set")
 
 	// 	// Function that sends the current response and the given status code.
 	// 	// If you want to bail out early, make sure to call return right after.
+	fmt.Println("Setting up function that sends the current response and the given status code.")
 	respond := func(status int) {
 		statusMessage := fmt.Sprintf(
 			"Responding to cluster %s with requestId %d, status %d, stats: {Added: %d, Total Resources: %d}",
@@ -133,105 +138,91 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		glog.Error("Error decoding body of syncEvent: ", err)
 		respond(http.StatusBadRequest)
 		return
-	
-		response.RequestId = syncEvent.RequestId
-		glog.V(3).Infof(
-			"Processing Request { request: %d, add: %d, update: %d, delete: %d edge add: %d edge delete: %d }",
-			syncEvent.RequestId, len(syncEvent.AddResources), len(syncEvent.UpdateResources),
-			len(syncEvent.DeleteResources), len(syncEvent.AddEdges), len(syncEvent.DeleteEdges))
+	}
+	response.RequestId = syncEvent.RequestId
+	glog.V(3).Infof(
+		"Processing Request { request: %d, add: %d }",
+		syncEvent.RequestId, len(syncEvent.AddResources))
 
-		err = db.ValidateClusterName(clusterName)
-		if err != nil {
-			glog.Warning("Invalid Cluster Name: ", clusterName)
-			respond(http.StatusBadRequest)
-			return
-		}
+	// err = db.ValidateClusterName(clusterName)
+	// if err != nil {
+	// 		glog.Warning("Invalid Cluster Name: ", clusterName)
+	// 		respond(http.StatusBadRequest)
+	// 		return
+	// }
 
-		// Validate that we have a Cluster CRD so we can build edges on create
-		if !assertClusterNode(clusterName) {
-			glog.Warningf(
-				"Warning, couldn't find a Cluster node with name: %s. This means that the sync request came from a managed cluster that hasn’t joined. Rejecting the incoming sync request.", clusterName)
-			respond(http.StatusBadRequest)
-			return
-		}
+	// // Validate that we have a Cluster CRD so we can build edges on create
+	// if !assertClusterNode(clusterName) {
+	// 	glog.Warningf(
+	// 		"Warning, couldn't find a Cluster node with name: %s. This means that the sync request came from a managed cluster that hasn’t joined. Rejecting the incoming sync request.", clusterName)
+	// 	respond(http.StatusBadRequest)
+	// 	return
+	// }
 
-		// add cluster fields
-		for i := range syncEvent.AddResources {
-			syncEvent.AddResources[i].Properties["cluster"] = clusterName
-		}
-		for i := range syncEvent.UpdateResources {
-			syncEvent.UpdateResources[i].Properties["cluster"] = clusterName
-		}
+	// // add cluster fields
+	// for i := range syncEvent.AddResources {
+	// 	syncEvent.AddResources[i].Properties["cluster"] = clusterName
+	// }
+	// for i := range syncEvent.UpdateResources {
+	// 	syncEvent.UpdateResources[i].Properties["cluster"] = clusterName
+	// }
 
-		// let us store the Current Subscription Uids in a map [String] -> boolean
-		uidresults, uiderr := getUIDsForSubscriptions()
-		if uiderr == nil {
-			if !uidresults.Empty() {
-				for uidresults.Next() {
-					record := uidresults.Record()
-					uid := record.GetByIndex(0).(string)
-					subscriptionUIDMap[uid] = true
-				}
-			}
+	// // let us store the Current Subscription Uids in a map [String] -> boolean
+	// uidresults, uiderr := getUIDsForSubscriptions()
+	// if uiderr == nil {
+	// 	if !uidresults.Empty() {
+	// 		for uidresults.Next() {
+	// 			record := uidresults.Record()
+	// 			uid := record.GetByIndex(0).(string)
+	// 			subscriptionUIDMap[uid] = true
+	// 		}
+	// 	}
 
-		} else {
-			glog.Warningf("Error Fetching Subscriptions %s", uiderr)
-		}
+	// } else {
+	// 	glog.Warningf("Error Fetching Subscriptions %s", uiderr)
+	// }
 
-		// This usually indicates that something has gone wrong, basically that the collector detected we
-		// are out of sync and wants us to resync.
-		if syncEvent.ClearAll {
-			stats, err := resyncCluster(clusterName, syncEvent.AddResources, syncEvent.AddEdges, &metrics)
-			if err != nil {
-				glog.Warning("Error on resyncCluster. ", clusterName, err)
-			} else {
-				response.TotalAdded = stats.TotalAdded
-				response.TotalUpdated = stats.TotalUpdated
-				response.TotalDeleted = stats.TotalDeleted
-				response.TotalEdgesAdded = stats.TotalEdgesAdded
-				response.TotalEdgesDeleted = stats.TotalEdgesDeleted
-				response.AddErrors = stats.AddErrors
-				response.UpdateErrors = stats.UpdateErrors
-				response.DeleteErrors = stats.DeleteErrors
-				response.AddEdgeErrors = stats.AddEdgeErrors
-				response.DeleteEdgeErrors = stats.DeleteEdgeErrors
-			}
+	// // This usually indicates that something has gone wrong, basically that the collector detected we
+	// // are out of sync and wants us to resync.
+	// if syncEvent.ClearAll {
+	// 	stats, err := resyncCluster(clusterName, syncEvent.AddResources, &metrics)
+	// 	if err != nil {
+	// 		glog.Warning("Error on resyncCluster. ", clusterName, err)
+	// 	} else {
+	// 		response.TotalAdded = stats.TotalAdded
+	// 		response.AddErrors = stats.AddErrors
+	// 	}
 
-		} else {
+	// } else {
 	// 		// INSERT Resources
 
 	// here is where you want to call insert function with the added resource ids mentioned above
-
 
 	for i := 0; i < TOTAL_CLUSTERS; i++ {
 
 		if CLUSTER_SHARDING {
 			tableName := fmt.Sprintf("cluster%d", i)
 			db.InsertFunction(tableName, syncEvent.AddResources, pool, fmt.Sprintf("cluster%d", i))
+			fmt.Println("Finished inserting data to tables.")
 		} else {
 			tableName := "resources"
 			db.InsertFunction(tableName, syncEvent.AddResources, pool, fmt.Sprintf("cluster%d", i))
 		}
-
-		if db.InsertFunction().ConnectionError != nil {
-			respond(http.StatusServiceUnavailable)
-		}
-		return
-	} else if len(InsertFunction.ResourceErrors) != 0 {
-			// 	response.AddErrors = processSyncErrors(insertResponse.ResourceErrors, "inserted")
-			// 	respond(http.StatusBadRequest)
-			// 	return
-			// }
-		
-
 	}
-		// fmt.Sprintln("Inserting ", tableName)
-		// if !SINGLE_TABLE {
-		// 	insertEdges(addEdges, edgeStmt, fmt.Sprintf("cluster%d", i))
-		// }
-		// database.Exec("COMMIT TRANSACTION")
-	}
+	return
+
+	// 	response.AddErrors = processSyncErrors(insertResponse.ResourceErrors, "inserted")
+	// 	respond(http.StatusBadRequest)
+	// 	return
+	// } //end here
+
 }
+
+// fmt.Sprintln("Inserting ", tableName)
+// if !SINGLE_TABLE {
+// 	insertEdges(addEdges, edgeStmt, fmt.Sprintf("cluster%d", i))
+// }
+// database.Exec("COMMIT TRANSACTION")
 
 // metrics.NodeSyncStart = time.Now()
 // insertResponse := db.ChunkedInsert(syncEvent.AddResources, clusterName) *

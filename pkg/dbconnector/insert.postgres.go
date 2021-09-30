@@ -19,12 +19,14 @@ func InsertFunction(tableName string, records []map[string]interface{}, db *pgxp
 	fmt.Print(".")
 	fmt.Println(tableName)
 	for _, record := range records {
+		fmt.Println("Record:", record)
 		lastUID = strings.Replace(record["uid"].(string), "local-cluster", clusterName, 1) //grab uid
-		// var err error
+		fmt.Println("UID:", lastUID)
+		var err error
 		if SINGLE_TABLE {
 
 			var data map[string]interface{}
-			bytes := []byte(record["data"].(string))
+			bytes := []byte(record["data"].(string)) // error is here
 			if err := json.Unmarshal(bytes, &data); err != nil {
 				panic(err)
 			}

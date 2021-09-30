@@ -77,7 +77,7 @@ func createTables() {
 				database.Exec(context.Background(), dquery)
 				database.Exec(context.Background(), "COMMIT TRANSACTION")
 
-				cquery := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (uid TEXT PRIMARY KEY, cluster TEXT, data JSONB, edgesTo TEXT, edgesFrom TEXT)", clusterName)
+				cquery := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (uid TEXT PRIMARY KEY, cluster TEXT, data JSONB)", clusterName)
 
 				_, err := database.Exec(context.Background(), cquery)
 				if err != nil {
@@ -87,7 +87,7 @@ func createTables() {
 		} else { //  single table but not cluster sharding
 
 			database.Exec(context.Background(), "DROP TABLE resources")
-			database.Exec(context.Background(), "CREATE TABLE IF NOT EXISTS resources (uid TEXT PRIMARY KEY, cluster TEXT, data JSONB, edgesTo TEXT, edgesFrom TEXT)")
+			database.Exec(context.Background(), "CREATE TABLE IF NOT EXISTS resources (uid TEXT PRIMARY KEY, cluster TEXT, data JSONB)")
 
 		}
 	} else {

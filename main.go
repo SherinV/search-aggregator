@@ -17,7 +17,6 @@ import (
 	"net/http"
 	"os"
 	"time"
-	"net/http"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
@@ -47,7 +46,7 @@ func main() {
 	}
 	//establish connection and crete tables:
 	dbconnector.GetDBConnection()
-	
+
 	// dbconnector.GetIndexes()
 	// go dbconnector.RedisWatcher()
 	// // Watch clusters and sync status to Redis.
@@ -55,15 +54,14 @@ func main() {
 
 	// // Run routine to build intercluster edges
 	// go handlers.BuildInterClusterEdges()
-
-	//insert data into tables:
-	go handlers.SyncResources(w http.ResponseWriter, r *http.Request)
-
 	router := mux.NewRouter()
 
 	// router.HandleFunc("/liveness", handlers.LivenessProbe).Methods("GET")
 	// router.HandleFunc("/readiness", handlers.ReadinessProbe).Methods("GET")
+	fmt.Println("created route")
 	router.HandleFunc("/aggregator/clusters/{id}/sync", handlers.SyncResources).Methods("POST")
+	// go handlers.SyncResources(w http.ResponseWriter, r *http.Request)
+	fmt.Println("after post method")
 
 	// Configure TLS
 	cfg := &tls.Config{
