@@ -20,11 +20,9 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
 	"time"
 
 	"github.com/golang/glog"
-	// "github.com/gomodule/redigo/redis"
 	pgxpool "github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -36,13 +34,15 @@ const (
 	maxConnections   = 8
 	SINGLE_TABLE     = true
 	CLUSTER_SHARDING = true
-	TOTAL_CLUSTERS   = 100
+	TOTAL_CLUSTERS   = 2
 )
 
 var lastUID string
 var database *pgxpool.Pool
+var InsertChan chan *Record
 
 func init() {
+	InsertChan = make(chan *Record, 100)
 	glog.Info("In init dbconnector")
 	Pool, err = setUpDBConnection()
 
@@ -51,6 +51,8 @@ func init() {
 	createTables()
 	fmt.Println("Created tables")
 
+	go batchInsert("A")
+	go batchInsert("B")
 	// if database == nil {
 	// 	fmt.Println("nil")
 	// } else {
@@ -72,6 +74,7 @@ func createTables() {
 		if CLUSTER_SHARDING {
 			for i := 0; i < TOTAL_CLUSTERS; i++ {
 				clusterName := fmt.Sprintf("cluster%d", i)
+
 				dquery := fmt.Sprintf("drop table if exists %s cascade; ", clusterName)
 
 				database.Exec(context.Background(), dquery)

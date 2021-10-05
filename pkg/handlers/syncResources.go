@@ -25,15 +25,9 @@ import (
 
 // SyncEvent - Object sent by the collector with the resources to change.
 type SyncEvent struct {
-	ClearAll bool `json:"clearAll,omitempty"`
-
+	ClearAll     bool `json:"clearAll,omitempty"`
 	AddResources []map[string]interface{}
-	// UpdateResources []*db.Resource
-	// DeleteResources []DeleteResourceEvent
-
-	// AddEdges    []db.Edge
-	// DeleteEdges []db.Edge
-	RequestId int
+	RequestId    int
 }
 
 // // DeleteResourceEvent - Contains the information needed to delete an existing resource.
@@ -43,25 +37,15 @@ type SyncEvent struct {
 
 // SyncResponse - Response to a SyncEvent
 type SyncResponse struct {
-	TotalAdded int
-	// TotalUpdated      int
-	// TotalDeleted      int
+	TotalAdded     int
 	TotalResources int
-	// TotalEdgesAdded   int
-	// TotalEdgesDeleted int
-	// TotalEdges        int
-	// AddErrors         []SyncError
-	// UpdateErrors      []SyncError
-	// DeleteErrors      []SyncError
-	// AddEdgeErrors     []SyncError
-	// DeleteEdgeErrors  []SyncError
-	Version   string
-	RequestId int
+	Version        string
+	RequestId      int
 }
 
-var pool *pgxpool.Pool
+var database *pgxpool.Pool
 
-const TOTAL_CLUSTERS = 100
+const TOTAL_CLUSTERS = 2
 const CLUSTER_SHARDING bool = true
 
 // // SyncError is used to respond with errors.
@@ -80,7 +64,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 	clusterName := params["uid"]
 
-	fmt.Println(clusterName)
+	// fmt.Println(clusterName)
 
 	// Limit amount of concurrent requests to prevent overloading Redis.
 	// Give priority to the local-cluster, because it's the hub and this is how we debug search.
@@ -113,12 +97,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 			response.RequestId,
 			status,
 			response.TotalAdded,
-			// response.TotalUpdated,
-			// response.TotalDeleted,
-			// response.TotalEdgesAdded,
-			// response.TotalEdgesDeleted,
 			response.TotalResources,
-			// response.TotalEdges,
 		)
 		if status == http.StatusOK {
 			glog.Infof(statusMessage)
@@ -144,69 +123,14 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		"Processing Request { request: %d, add: %d }",
 		syncEvent.RequestId, len(syncEvent.AddResources))
 
-	// err = db.ValidateClusterName(clusterName)
-	// if err != nil {
-	// 		glog.Warning("Invalid Cluster Name: ", clusterName)
-	// 		respond(http.StatusBadRequest)
-	// 		return
-	// }
-
-	// // Validate that we have a Cluster CRD so we can build edges on create
-	// if !assertClusterNode(clusterName) {
-	// 	glog.Warningf(
-	// 		"Warning, couldn't find a Cluster node with name: %s. This means that the sync request came from a managed cluster that hasn’t joined. Rejecting the incoming sync request.", clusterName)
-	// 	respond(http.StatusBadRequest)
-	// 	return
-	// }
-
-	// // add cluster fields
-	// for i := range syncEvent.AddResources {
-	// 	syncEvent.AddResources[i].Properties["cluster"] = clusterName
-	// }
-	// for i := range syncEvent.UpdateResources {
-	// 	syncEvent.UpdateResources[i].Properties["cluster"] = clusterName
-	// }
-
-	// // let us store the Current Subscription Uids in a map [String] -> boolean
-	// uidresults, uiderr := getUIDsForSubscriptions()
-	// if uiderr == nil {
-	// 	if !uidresults.Empty() {
-	// 		for uidresults.Next() {
-	// 			record := uidresults.Record()
-	// 			uid := record.GetByIndex(0).(string)
-	// 			subscriptionUIDMap[uid] = true
-	// 		}
-	// 	}
-
-	// } else {
-	// 	glog.Warningf("Error Fetching Subscriptions %s", uiderr)
-	// }
-
-	// // This usually indicates that something has gone wrong, basically that the collector detected we
-	// // are out of sync and wants us to resync.
-	// if syncEvent.ClearAll {
-	// 	stats, err := resyncCluster(clusterName, syncEvent.AddResources, &metrics)
-	// 	if err != nil {
-	// 		glog.Warning("Error on resyncCluster. ", clusterName, err)
-	// 	} else {
-	// 		response.TotalAdded = stats.TotalAdded
-	// 		response.AddErrors = stats.AddErrors
-	// 	}
-
-	// } else {
-	// 		// INSERT Resources
-
-	// here is where you want to call insert function with the added resource ids mentioned above
-
 	for i := 0; i < TOTAL_CLUSTERS; i++ {
 
 		if CLUSTER_SHARDING {
 			tableName := fmt.Sprintf("cluster%d", i)
-			db.InsertFunction(tableName, syncEvent.AddResources, pool, fmt.Sprintf("cluster%d", i))
-			fmt.Println("Finished inserting data to tables.")
+			db.InsertFunction(tableName, syncEvent.AddResources, database, fmt.Sprintf("cluster%d", i))
 		} else {
 			tableName := "resources"
-			db.InsertFunction(tableName, syncEvent.AddResources, pool, fmt.Sprintf("cluster%d", i))
+			db.InsertFunction(tableName, syncEvent.AddResources, database, fmt.Sprintf("cluster%d", i))
 		}
 	}
 	return
