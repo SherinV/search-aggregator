@@ -46,7 +46,7 @@ type SyncResponse struct {
 var database *pgxpool.Pool
 
 const TOTAL_CLUSTERS = 2
-const CLUSTER_SHARDING bool = true
+const CLUSTER_SHARDING bool = false
 
 // // SyncError is used to respond with errors.
 // type SyncError struct {
@@ -58,6 +58,7 @@ const CLUSTER_SHARDING bool = true
 func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
+	fmt.Println("Request:", r)
 	params := mux.Vars(r)
 
 	fmt.Println("params:", params["uid"]) //returns empty

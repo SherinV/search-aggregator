@@ -16,8 +16,8 @@ var batch *pgx.Batch
 // // from benchmark:
 func InsertFunction(tableName string, records []map[string]interface{}, database *pgxpool.Pool, clusterName string) {
 	fmt.Print(".")
-	fmt.Println(tableName)
-	fmt.Println("pool", database)
+	// fmt.Println(tableName)
+	// fmt.Println("pool", database)
 
 	for _, record := range records {
 		// fmt.Printf("Record: %T\n", record)
@@ -51,15 +51,15 @@ func batchInsert(instance string) {
 		record := <-InsertChan
 
 		batch.Queue(fmt.Sprintf("INSERT into %s values($1,$2,$3)", record.TableName), record.UID, record.Cluster, record.Properties)
-		fmt.Println("batch queued")
-		fmt.Println(batch)
+		// fmt.Println("batch queued")
+		// fmt.Println(batch)
 		if batch.Len() == BatchSize || (batch.Len() > 0) {
 			fmt.Print("+")
-			fmt.Println("POOL:", database)
-			fmt.Println("context", context.Background())
+			// fmt.Println("POOL:", database)
+			// fmt.Println("context", context.Background())
 			br := database.SendBatch(context.Background(), batch) //br = batch results
 			res, err := br.Exec()
-			fmt.Println("batch sent to pool")
+			// fmt.Println("batch sent to pool")
 			if err != nil {
 				fmt.Println("res: ", res, "  err: ", err, batch.Len())
 			}

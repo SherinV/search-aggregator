@@ -33,7 +33,7 @@ const (
 	IDLE_TIMEOUT     = 60 // ReadinessProbe runs every 30 seconds, this keeps the connection alive between probe intervals.
 	maxConnections   = 8
 	SINGLE_TABLE     = true
-	CLUSTER_SHARDING = true
+	CLUSTER_SHARDING = false
 	TOTAL_CLUSTERS   = 2
 )
 
