@@ -51,8 +51,9 @@ func init() {
 	createTables()
 	fmt.Println("Created tables")
 
-	go batchInsert("A")
-	go batchInsert("B")
+	go batchInsert("goroutine1")
+	go batchInsert("goroutine2")
+
 	// if database == nil {
 	// 	fmt.Println("nil")
 	// } else {

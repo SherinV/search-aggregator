@@ -11,25 +11,25 @@
 
 package dbconnector
 
-// import (
-// 	"errors"
-// 	"fmt"
-// 	"reflect"
-// 	"sort"
-// 	"strings"
-// )
+import (
+	"errors"
+	// "fmt"
+	// "reflect"
+	// "sort"
+	"strings"
+)
 
 // // Tells whether the given clusterName is valid, i.e. has no illegal characters and isn't empty
-// func ValidateClusterName(clusterName string) error {
-// 	if len(clusterName) == 0 {
-// 		return errors.New("clusterName must not be empty.")
-// 	}
-// 	if strings.Contains(clusterName, "/") || strings.Contains(clusterName, ".") ||
-// 		strings.Contains(clusterName, "=") || strings.Contains(clusterName, "'") {
-// 		return errors.New("clusterName contains illegal characters: /, ., =, or '")
-// 	}
-// 	return nil
-// }
+func ValidateClusterName(clusterName string) error {
+	if len(clusterName) == 0 {
+		return errors.New("clusterName must not be empty.")
+	}
+	if strings.Contains(clusterName, "/") || strings.Contains(clusterName, ".") ||
+		strings.Contains(clusterName, "=") || strings.Contains(clusterName, "'") {
+		return errors.New("clusterName contains illegal characters: /, ., =, or '")
+	}
+	return nil
+}
 
 // // Given a resource, output all the properties for it in map[string]interface{}
 // // (always string or int64, that's what Redisgraph supports) pairs.

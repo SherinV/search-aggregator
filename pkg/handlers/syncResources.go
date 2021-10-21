@@ -8,13 +8,15 @@
 // Copyright (c) 2020 Red Hat, Inc.
 // */
 // // Copyright Contributors to the Open Cluster Management project
-
 package handlers
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"runtime"
+
+	// "time"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/mux"
@@ -30,10 +32,10 @@ type SyncEvent struct {
 	RequestId    int
 }
 
-// // DeleteResourceEvent - Contains the information needed to delete an existing resource.
-// type DeleteResourceEvent struct {
-// 	UID string `json:"uid,omitempty"`
-// }
+// DeleteResourceEvent - Contains the information needed to delete an existing resource.
+type DeleteResourceEvent struct {
+	UID string `json:"uid,omitempty"`
+}
 
 // SyncResponse - Response to a SyncEvent
 type SyncResponse struct {
@@ -45,7 +47,7 @@ type SyncResponse struct {
 
 var database *pgxpool.Pool
 
-const TOTAL_CLUSTERS = 2
+const TOTAL_CLUSTERS = 1
 const CLUSTER_SHARDING bool = false
 
 // // SyncError is used to respond with errors.
@@ -80,8 +82,8 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 	glog.Info("Starting SyncResources() for cluster: ", clusterName)
 
-	// 	metrics := InitSyncMetrics(clusterName)
-	// 	defer metrics.CompleteSyncEvent()
+	metrics := InitSyncMetrics(clusterName)
+	defer metrics.CompleteSyncEvent()
 
 	// 	subscriptionUpdated := false                // flag to decide the time when last suscription was changed
 	// 	subscriptionUIDMap := make(map[string]bool) // map to hold exisiting subscription uids
@@ -93,12 +95,12 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Setting up function that sends the current response and the given status code.")
 	respond := func(status int) {
 		statusMessage := fmt.Sprintf(
-			"Responding to cluster %s with requestId %d, status %d, stats: {Added: %d, Total Resources: %d}",
+			"Responding to cluster %s with requestId %d, status %d",
 			clusterName,
 			response.RequestId,
 			status,
-			response.TotalAdded,
-			response.TotalResources,
+			// response.TotalAdded,
+			// response.TotalResources,
 		)
 		if status == http.StatusOK {
 			glog.Infof(statusMessage)
@@ -134,15 +136,76 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 			db.InsertFunction(tableName, syncEvent.AddResources, database, fmt.Sprintf("cluster%d", i))
 		}
 	}
+	// metrics.EdgeSyncEnd = time.Now()
+
+	// metrics.SyncEnd = time.Now()
+	// metrics.LogPerformanceMetrics(syncEvent)
+
+	// glog.V(2).Infof("syncResources complete. Done updating resources for cluster %s, preparing response", clusterName)
+	// response.TotalResources = computeNodeCount(clusterName) // This goes out to the DB, so it can take a second
+	// response.TotalEdges = computeIntraEdges(clusterName)
+	respond(http.StatusOK)
+	PrintMemUsage()
 	return
-
-	// 	response.AddErrors = processSyncErrors(insertResponse.ResourceErrors, "inserted")
-	// 	respond(http.StatusBadRequest)
-	// 	return
-	// } //end here
-
 }
 
+func PrintMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	fmt.Println("\nMEMORY USAGE:")
+	fmt.Printf("\tAlloc = %v MiB", bToMb(m.Alloc))
+	fmt.Printf("\n\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
+	fmt.Printf("\n\tSys = %v MiB", bToMb(m.Sys))
+	fmt.Printf("\n\tNumGC = %v\n\n", m.NumGC)
+}
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
+}
+
+// 	// if any Node with kind Subscription Added then subscriptionUpdated
+// 	for i := range syncEvent.AddResources {
+// 		if (!subscriptionUpdated) && (syncEvent.AddResources[i].Properties["kind"] == "Subscription") {
+// 			glog.V(3).Infof("Will trigger Intercluster - Added Node %s ", syncEvent.AddResources[i].Properties["name"])
+// 			subscriptionUpdated = true
+// 			break
+// 		}
+// 	}
+// 	if !subscriptionUpdated {
+// 		for i := range syncEvent.UpdateResources {
+// 			if (!subscriptionUpdated) && (syncEvent.UpdateResources[i].Properties["kind"] == "Subscription") {
+// 				glog.V(3).Infof("Will trigger Intercluster - Updated Node %s ",
+// 					syncEvent.UpdateResources[i].Properties["name"])
+// 				subscriptionUpdated = true
+// 				break
+// 			}
+// 		}
+// 	}
+
+// 	if subscriptionUpdated {
+// 		ApplicationLastUpdated = time.Now()
+// 	}
+// }
+
+// internal function to inline the errors
+// func processSyncErrors(re map[string]error, verb string) []SyncError {
+// 	ret := []SyncError{}
+// 	for uid, e := range re {
+// 		glog.Errorf("Resource %s cannot be %s: %s", uid, verb, e)
+// 		ret = append(ret, SyncError{
+// 			ResourceUID: uid,
+// 			Message:     e.Error(),
+// 		})
+// 	}
+
+// 	return ret
+// }
+
+//end
+
+// 	response.AddErrors = processSyncErrors(insertResponse.ResourceErrors, "inserted")
+// 	respond(http.StatusBadRequest)
+// 	return
+// } //end here
 // fmt.Sprintln("Inserting ", tableName)
 // if !SINGLE_TABLE {
 // 	insertEdges(addEdges, edgeStmt, fmt.Sprintf("cluster%d", i))
@@ -233,8 +296,9 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 // 	metrics.SyncEnd = time.Now()
 // 	metrics.LogPerformanceMetrics(syncEvent)
 
-// 	glog.V(2).Infof("syncResources complete. Done updating resources for cluster %s, preparing response", clusterName)
-// 	response.TotalResources = computeNodeCount(clusterName) // This goes out to the DB, so it can take a second
+// glog.V(2).Infof("syncResources complete. Done updating resources for cluster %s, preparing response", clusterName)
+// response.TotalResources = computeNodeCount(clusterName) // This goes out to the DB, so it can take a second
+
 // 	response.TotalEdges = computeIntraEdges(clusterName)
 
 // 	respond(http.StatusOK)
@@ -277,4 +341,5 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 // 	}
 
 // 	return ret
+// }
 // }

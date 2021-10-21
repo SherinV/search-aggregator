@@ -10,11 +10,10 @@ package handlers
 
 // import (
 // 	"github.com/golang/glog"
-// 	"github.com/open-cluster-management/search-aggregator/pkg/config"
 // 	db "github.com/open-cluster-management/search-aggregator/pkg/dbconnector"
 // )
 
-// // returns the total number of nodes on cluster
+// // // returns the total number of nodes on cluster
 // func computeNodeCount(clusterName string) int {
 // 	resp, err := db.TotalNodes(clusterName)
 // 	if err != nil {

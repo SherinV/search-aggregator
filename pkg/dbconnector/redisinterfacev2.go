@@ -19,9 +19,9 @@ import (
 
 var Store DBStore
 
-// Interface for the DB dependency. Used for mocking rg.
+// Interface for the DB dependency. Used for mocking pgx.
 type DBStore interface {
-	Query(q string) (pgx.Rows, error)
+	Query(q string) (QueryResult, error)
 }
 
 type QueryResult struct {

@@ -13,6 +13,8 @@ package handlers
 import (
 	"sync"
 	"time"
+
+	"github.com/golang/glog"
 )
 
 // Track clusters with pending requests.
@@ -40,26 +42,26 @@ func InitSyncMetrics(clusterName string) SyncMetrics {
 	return s
 }
 
-// func (m SyncMetrics) CompleteSyncEvent() {
-// 	glog.V(2).Info("Completed sync of cluster: ", m.clusterName)
-// 	PendingRequestsMutex.Lock()
-// 	delete(PendingRequests, m.clusterName)
-// 	PendingRequestsMutex.Unlock()
-// }
+func (m SyncMetrics) CompleteSyncEvent() {
+	glog.V(2).Info("Completed sync of cluster: ", m.clusterName)
+	PendingRequestsMutex.Lock()
+	delete(PendingRequests, m.clusterName)
+	PendingRequestsMutex.Unlock()
+}
 
-// func (m SyncMetrics) LogPerformanceMetrics(syncEvent SyncEvent) {
-// 	elapsed := time.Since(m.syncStart)
-// 	if int(elapsed.Seconds()) > 1 {
-// 		glog.Warningf("SyncResources from %s took %s", m.clusterName, elapsed)
-// 		glog.Warningf(
-// 			"Increased processing time {request: %d, add: %d, update: %d, delete: %d edge add: %d edge delete: %d}",
-// 			syncEvent.RequestId, len(syncEvent.AddResources), len(syncEvent.UpdateResources),
-// 			len(syncEvent.DeleteResources), len(syncEvent.AddEdges), len(syncEvent.DeleteEdges))
-// 		glog.Warning("  > Nodes sync took: ", m.NodeSyncEnd.Sub(m.NodeSyncStart))
-// 		glog.Warning("  > Edges sync took: ", m.EdgeSyncEnd.Sub(m.EdgeSyncStart))
-// 	} else {
-// 		glog.V(4).Infof("SyncResources from %s took %s", m.clusterName, elapsed)
-// 		glog.V(4).Info("  > Nodes sync took: ", m.NodeSyncEnd.Sub(m.NodeSyncStart))
-// 		glog.V(4).Info("  > Edges sync took: ", m.EdgeSyncEnd.Sub(m.EdgeSyncStart))
-// 	}
-// }
+func (m SyncMetrics) LogPerformanceMetrics(syncEvent SyncEvent) {
+	elapsed := time.Since(m.syncStart)
+	if int(elapsed.Seconds()) > 1 {
+		glog.Warningf("SyncResources from %s took %s", m.clusterName, elapsed)
+		glog.Warningf(
+			"Increased processing time {request: %d, add: %d, update: %d, delete: %d edge add: %d edge delete: %d}",
+			syncEvent.RequestId, len(syncEvent.AddResources))
+		// , len(syncEvent.UpdateResources),len(syncEvent.DeleteResources), len(syncEvent.AddEdges), len(syncEvent.DeleteEdges))
+		glog.Warning("  > Nodes sync took: ", m.NodeSyncEnd.Sub(m.NodeSyncStart))
+		glog.Warning("  > Edges sync took: ", m.EdgeSyncEnd.Sub(m.EdgeSyncStart))
+	} else {
+		glog.V(4).Infof("SyncResources from %s took %s", m.clusterName, elapsed)
+		glog.V(4).Info("  > Nodes sync took: ", m.NodeSyncEnd.Sub(m.NodeSyncStart))
+		glog.V(4).Info("  > Edges sync took: ", m.EdgeSyncEnd.Sub(m.EdgeSyncStart))
+	}
+}
