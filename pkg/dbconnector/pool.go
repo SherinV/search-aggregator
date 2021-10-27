@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	pgx "github.com/jackc/pgx/v4"
 	pgxpool "github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -39,10 +40,10 @@ const (
 
 var lastUID string
 var database *pgxpool.Pool
-var InsertChan chan *Record
+var InsertChan chan *pgx.Batch
 
 func init() {
-	InsertChan = make(chan *Record, 100)
+	InsertChan = make(chan *pgx.Batch)
 	glog.Info("In init dbconnector")
 	Pool, err = setUpDBConnection()
 
@@ -52,7 +53,7 @@ func init() {
 	fmt.Println("Created tables")
 
 	go batchInsert("goroutine1")
-	go batchInsert("goroutine2")
+	//go batchInsert("goroutine2")
 
 	// if database == nil {
 	// 	fmt.Println("nil")

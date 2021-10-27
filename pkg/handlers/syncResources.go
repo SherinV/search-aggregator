@@ -122,7 +122,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.RequestId = syncEvent.RequestId
-	glog.V(3).Infof(
+	glog.Infof(
 		"Processing Request { request: %d, add: %d }",
 		syncEvent.RequestId, len(syncEvent.AddResources))
 

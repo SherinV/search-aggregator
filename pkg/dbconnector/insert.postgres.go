@@ -3,6 +3,7 @@ package dbconnector
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	pgx "github.com/jackc/pgx/v4"
@@ -16,11 +17,13 @@ var batch *pgx.Batch
 // // from benchmark:
 func InsertFunction(tableName string, records []map[string]interface{}, database *pgxpool.Pool, clusterName string) {
 	fmt.Print(".")
-	// fmt.Println(tableName)
-	// fmt.Println("pool", database)
+	fmt.Println(len(records))
 
-	for _, record := range records {
-		// fmt.Printf("Record: %T\n", record)
+	// fmt.Println("pool", database)
+	batch := &pgx.Batch{}
+	for idx, record := range records {
+		//fmt.Println("Iterating Records.... ", ctr)
+		//fmt.Printf("Record UID: %s\n", record["uid"].(string))
 		lastUID = strings.Replace(record["uid"].(string), "local-cluster", clusterName, 1) //grab uid
 
 		// fmt.Println("UID:", lastUID)
@@ -28,15 +31,24 @@ func InsertFunction(tableName string, records []map[string]interface{}, database
 		if SINGLE_TABLE {
 			properties, _ := record["properties"].(map[string]interface{})
 			// fmt.Println(record["properties"])
-
 			record := &Record{TableName: tableName, UID: lastUID, Cluster: clusterName, Properties: properties}
-			InsertChan <- record
+			batch.Queue(fmt.Sprintf("INSERT into %s values($1,$2,$3)", record.TableName), record.UID, record.Cluster, record.Properties)
+			if idx%50 == 0 { // 50 inserts at each post
+				fmt.Printf("Posting : %d\n", idx)
+				InsertChan <- batch
+				batch = &pgx.Batch{}
+			}
 
 			if err != nil {
 				fmt.Println("Error inserting record:", err, record)
 				panic(err)
 			}
 		}
+	}
+	if batch.Len() > 0 {
+		fmt.Printf("Posting rest of the bucket: %d\n", batch.Len())
+		InsertChan <- batch
+		batch = &pgx.Batch{}
 	}
 }
 
@@ -45,29 +57,18 @@ func InsertFunction(tableName string, records []map[string]interface{}, database
 const BatchSize = 10 //resources at a time
 
 func batchInsert(instance string) {
-	batch := &pgx.Batch{}
 
 	for {
-		record := <-InsertChan
 
-		batch.Queue(fmt.Sprintf("INSERT into %s values($1,$2,$3)", record.TableName), record.UID, record.Cluster, record.Properties)
-		// fmt.Println("batch queued")
-		// fmt.Println(batch)
-		if batch.Len() == BatchSize || (batch.Len() > 0) {
-			fmt.Print("+")
-			// fmt.Println("POOL:", database)
-			// fmt.Println("context", context.Background())
-			br := database.SendBatch(context.Background(), batch) //br = batch results
-			res, err := br.Exec()
-			// fmt.Println("batch sent to pool")
-			if err != nil {
-				fmt.Println("res: ", res, "  err: ", err, batch.Len())
-			}
-			br.Close()
-			batch = &pgx.Batch{}
-		} else {
-			break
+		batch := <-InsertChan
+
+		br := database.SendBatch(context.Background(), batch) //br = batch results
+		res, err := br.Exec()
+		// fmt.Println("batch sent to pool")
+		if err != nil {
+			log.Fatal("res: ", res.RowsAffected(), "  err: ", err, batch.Len())
 		}
+		br.Close()
 
 	}
 }
