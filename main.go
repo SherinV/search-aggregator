@@ -59,6 +59,7 @@ func main() {
 	// router.HandleFunc("/liveness", handlers.LivenessProbe).Methods("GET")
 	// router.HandleFunc("/readiness", handlers.ReadinessProbe).Methods("GET")
 	fmt.Println("created route")
+	handlers.PrintMemUsage("initial memory")
 	router.HandleFunc("/aggregator/clusters/{id}/sync", handlers.SyncResources).Methods("POST")
 	// go handlers.SyncResources(w http.ResponseWriter, r *http.Request)
 	fmt.Println("after post method")

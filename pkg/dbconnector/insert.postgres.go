@@ -54,7 +54,7 @@ func InsertFunction(tableName string, records []map[string]interface{}, database
 
 // tx.Commit(context.Background())
 
-const BatchSize = 10 //resources at a time
+const BatchSize = 200 //resources at a time
 
 func batchInsert(instance string) {
 
