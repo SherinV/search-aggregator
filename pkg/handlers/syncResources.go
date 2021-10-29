@@ -61,10 +61,10 @@ const CLUSTER_SHARDING bool = false
 func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
-	fmt.Println("Request:", r)
+	// fmt.Println("Request:", r)
 	params := mux.Vars(r)
 
-	fmt.Println("params:", params["uid"]) //returns empty
+	// fmt.Println("params:", params["uid"]) //returns empty
 
 	clusterName := params["uid"]
 
@@ -89,7 +89,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	// 	subscriptionUpdated := false                // flag to decide the time when last suscription was changed
 	// 	subscriptionUIDMap := make(map[string]bool) // map to hold exisiting subscription uids
 	response := SyncResponse{Version: config.AGGREGATOR_API_VERSION}
-	fmt.Println("Response set")
+	// fmt.Println("Response set")
 
 	// 	// Function that sends the current response and the given status code.
 	// 	// If you want to bail out early, make sure to call return right after.
@@ -100,8 +100,6 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 			clusterName,
 			response.RequestId,
 			status,
-			// response.TotalAdded,
-			// response.TotalResources,
 		)
 		if status == http.StatusOK {
 			glog.Infof(statusMessage)
@@ -146,12 +144,14 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	// glog.V(2).Infof("syncResources complete. Done updating resources for cluster %s, preparing response", clusterName)
 	// response.TotalResources = computeNodeCount(clusterName) // This goes out to the DB, so it can take a second
 	// response.TotalEdges = computeIntraEdges(clusterName)
+	PrintMemUsage("After inserting data into resources or cluster tables.")
 	respond(http.StatusOK)
-	PrintMemUsage()
+
 	return
 }
 
-func PrintMemUsage() {
+func PrintMemUsage(PrintStatement string) {
+	fmt.Println(PrintStatement)
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 	fmt.Println("\nMEMORY USAGE:")
