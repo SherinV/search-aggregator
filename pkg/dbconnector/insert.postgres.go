@@ -18,8 +18,8 @@ var batch *pgx.Batch
 func InsertFunction(tableName string, records []map[string]interface{}, edges []Edge, clusterName string) {
 	//fmt.Print(".")
 	//fmt.Println(len(records))
-	firstUID := records[0]["uid"].(string)
-	clusterName = strings.Split(firstUID, "-")[0]
+	// firstUID := records[0]["uid"].(string)
+	// clusterName = strings.Split(firstUID, "-")[0]
 	//fmt.Printf("clusterName: %s\n", clusterName)
 	//_, err := database.Exec(context.Background(), fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (uid TEXT PRIMARY KEY,  edgesTo TEXT,edgesFrom TEXT)", clusterName))
 	// fmt.Println("pool", database)

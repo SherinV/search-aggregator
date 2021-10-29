@@ -48,8 +48,8 @@ type SyncResponse struct {
 
 var database *pgxpool.Pool
 
-const TOTAL_CLUSTERS = 1
-const CLUSTER_SHARDING bool = false
+// const TOTAL_CLUSTERS = 1
+// const CLUSTER_SHARDING bool = false
 
 // // SyncError is used to respond with errors.
 // type SyncError struct {
@@ -66,7 +66,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 	// fmt.Println("params:", params["uid"]) //returns empty
 
-	clusterName := params["uid"]
+	clusterName := params["id"]
 
 	// fmt.Println(clusterName)
 
@@ -125,17 +125,17 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 		"Processing Request { request: %d, add: %d }",
 		syncEvent.RequestId, len(syncEvent.AddResources))
 
-	for i := 0; i < TOTAL_CLUSTERS; i++ {
+	// for i := 0; i < TOTAL_CLUSTERS; i++ {
 
-		if CLUSTER_SHARDING {
-			tableName := fmt.Sprintf("cluster%d", i)
-			db.InsertFunction(tableName, syncEvent.AddResources, syncEvent.AddEdges, fmt.Sprintf("cluster%d", i))
-		} else {
-			tableName := "resources"
-			db.InsertFunction(tableName, syncEvent.AddResources, syncEvent.AddEdges, fmt.Sprintf("cluster%d", i))
-			//db.InsertEdgesFunction(syncEvent.AddEdges, database, fmt.Sprintf("cluster%d", i))
-		}
-	}
+	// 	if CLUSTER_SHARDING {
+	// tableName := fmt.Sprintf("cluster%d", i)
+	// db.InsertFunction(tableName, syncEvent.AddResources, syncEvent.AddEdges, fmt.Sprintf("cluster%d", i))
+	// } else {
+	tableName := "resources"
+	db.InsertFunction(tableName, syncEvent.AddResources, syncEvent.AddEdges, clusterName)
+	//db.InsertEdgesFunction(syncEvent.AddEdges, database, fmt.Sprintf("cluster%d", i))
+	// 	}
+	// }
 	// metrics.EdgeSyncEnd = time.Now()
 
 	// metrics.SyncEnd = time.Now()
