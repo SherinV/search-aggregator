@@ -29,6 +29,7 @@ import (
 type SyncEvent struct {
 	ClearAll     bool `json:"clearAll,omitempty"`
 	AddResources []map[string]interface{}
+	AddEdges     []db.Edge
 	RequestId    int
 }
 
@@ -74,11 +75,11 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	// TODO: The next step is to degrade performance instead of rejecting the request.
 	//       We will give priority to nodes over edges after reaching certain load.
 	//       Will also prioritize small updates over a large resync.
-	if len(PendingRequests) >= config.Cfg.RequestLimit && clusterName != "local-cluster" { //start here
-		glog.Warningf("Too many pending requests (%d). Rejecting sync from %s", len(PendingRequests), clusterName)
-		http.Error(w, "Aggregator has many pending requests, retry later.", http.StatusTooManyRequests)
-		return
-	}
+	//if len(PendingRequests) >= config.Cfg.RequestLimit && clusterName != "local-cluster" { //start here
+	//	glog.Warningf("Too many pending requests (%d). Rejecting sync from %s", len(PendingRequests), clusterName)
+	//	http.Error(w, "Aggregator has many pending requests, retry later.", http.StatusTooManyRequests)
+	//	return
+	//}
 
 	glog.Info("Starting SyncResources() for cluster: ", clusterName)
 
@@ -130,10 +131,11 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 		if CLUSTER_SHARDING {
 			tableName := fmt.Sprintf("cluster%d", i)
-			db.InsertFunction(tableName, syncEvent.AddResources, database, fmt.Sprintf("cluster%d", i))
+			db.InsertFunction(tableName, syncEvent.AddResources, syncEvent.AddEdges, fmt.Sprintf("cluster%d", i))
 		} else {
 			tableName := "resources"
-			db.InsertFunction(tableName, syncEvent.AddResources, database, fmt.Sprintf("cluster%d", i))
+			db.InsertFunction(tableName, syncEvent.AddResources, syncEvent.AddEdges, fmt.Sprintf("cluster%d", i))
+			//db.InsertEdgesFunction(syncEvent.AddEdges, database, fmt.Sprintf("cluster%d", i))
 		}
 	}
 	// metrics.EdgeSyncEnd = time.Now()

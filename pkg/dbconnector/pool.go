@@ -92,7 +92,7 @@ func createTables() {
 		} else { //  single table but not cluster sharding
 
 			database.Exec(context.Background(), "DROP TABLE resources")
-			database.Exec(context.Background(), "CREATE TABLE IF NOT EXISTS resources (uid TEXT PRIMARY KEY, cluster TEXT, data JSONB)")
+			database.Exec(context.Background(), "CREATE TABLE IF NOT EXISTS resources (uid TEXT PRIMARY KEY, cluster TEXT, data JSONB,edgesTo TEXT,edgesFrom TEXT)")
 
 		}
 	} else {
