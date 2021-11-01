@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+
 	"strings"
 
 	pgx "github.com/jackc/pgx/v4"
@@ -18,6 +19,7 @@ var batch *pgx.Batch
 func InsertFunction(tableName string, records []map[string]interface{}, edges []Edge, clusterName string) {
 	//fmt.Print(".")
 	//fmt.Println(len(records))
+	// fmt.Println("The uid of the first record is: ", records[0]["uid"].(string))
 	// firstUID := records[0]["uid"].(string)
 	// clusterName = strings.Split(firstUID, "-")[0]
 	//fmt.Printf("clusterName: %s\n", clusterName)
@@ -30,8 +32,8 @@ func InsertFunction(tableName string, records []map[string]interface{}, edges []
 	for idx, record := range records {
 		//fmt.Println("Iterating Records.... ", ctr)
 
-		lastUID = strings.Replace(record["uid"].(string), "local-cluster", clusterName, 1) //grab uid
-
+		lastUID = strings.Replace(record["uid"].(string), "locust-cluster", clusterName, 1) //grab uid
+		// lastUID = record["uid"].(string)
 		properties, _ := record["properties"].(map[string]interface{})
 		// fmt.Println(record["properties"])
 		//fmt.Println("len edges ", len(edges))

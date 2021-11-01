@@ -68,7 +68,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 
 	clusterName := params["id"]
 
-	// fmt.Println(clusterName)
+	fmt.Println("The cluster id", clusterName)
 
 	// Limit amount of concurrent requests to prevent overloading Redis.
 	// Give priority to the local-cluster, because it's the hub and this is how we debug search.
@@ -132,6 +132,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	// db.InsertFunction(tableName, syncEvent.AddResources, syncEvent.AddEdges, fmt.Sprintf("cluster%d", i))
 	// } else {
 	tableName := "resources"
+	fmt.Println("The CLUSTER ID is:", clusterName)
 	db.InsertFunction(tableName, syncEvent.AddResources, syncEvent.AddEdges, clusterName)
 	//db.InsertEdgesFunction(syncEvent.AddEdges, database, fmt.Sprintf("cluster%d", i))
 	// 	}
@@ -144,7 +145,7 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	// glog.V(2).Infof("syncResources complete. Done updating resources for cluster %s, preparing response", clusterName)
 	// response.TotalResources = computeNodeCount(clusterName) // This goes out to the DB, so it can take a second
 	// response.TotalEdges = computeIntraEdges(clusterName)
-	PrintMemUsage("After inserting data into resources or cluster tables.")
+	// PrintMemUsage("After inserting data into resources or cluster tables.")
 	respond(http.StatusOK)
 
 	return
