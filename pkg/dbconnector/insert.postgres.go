@@ -32,7 +32,7 @@ func InsertFunction(tableName string, records []map[string]interface{}, edges []
 	for idx, record := range records {
 		//fmt.Println("Iterating Records.... ", ctr)
 
-		lastUID = strings.Replace(record["uid"].(string), "locust-cluster", clusterName, 1) //grab uid
+		lastUID = strings.Replace(record["uid"].(string), "local-cluster", clusterName, 1) //grab uid
 		// lastUID = record["uid"].(string)
 		properties, _ := record["properties"].(map[string]interface{})
 		// fmt.Println(record["properties"])
