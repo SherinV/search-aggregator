@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime"
+	"time"
 
 	// "time"
 
@@ -67,9 +68,6 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println("params:", params["uid"]) //returns empty
 
 	clusterName := params["id"]
-
-	fmt.Println("The cluster id", clusterName)
-
 	// Limit amount of concurrent requests to prevent overloading Redis.
 	// Give priority to the local-cluster, because it's the hub and this is how we debug search.
 	// TODO: The next step is to degrade performance instead of rejecting the request.
@@ -133,7 +131,9 @@ func SyncResources(w http.ResponseWriter, r *http.Request) {
 	// } else {
 	tableName := "resources"
 	fmt.Println("The CLUSTER ID is:", clusterName)
+	start := time.Now()
 	db.InsertFunction(tableName, syncEvent.AddResources, syncEvent.AddEdges, clusterName)
+	fmt.Println("\nInsert took", time.Since(start))
 	//db.InsertEdgesFunction(syncEvent.AddEdges, database, fmt.Sprintf("cluster%d", i))
 	// 	}
 	// }

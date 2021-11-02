@@ -19,7 +19,8 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
+
+	// "strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -143,7 +144,7 @@ func setUpDBConnection() (*pgxpool.Pool, error) {
 	}
 
 	database_url := fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME)
-	glog.Info("Connecting to PostgreSQL at: ", strings.ReplaceAll(database_url, DB_PASSWORD, "*****"))
+	glog.Info("Connecting to PostgreSQL at: ", database_url, DB_PASSWORD)
 	config, connerr := pgxpool.ParseConfig(database_url)
 	if connerr != nil {
 		glog.Info("Error connecting to DB:", connerr)

@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
-	"strings"
+	// "strings"
 
 	pgx "github.com/jackc/pgx/v4"
 )
@@ -17,6 +18,7 @@ var batch *pgx.Batch
 
 // // from benchmark:
 func InsertFunction(tableName string, records []map[string]interface{}, edges []Edge, clusterName string) {
+	start := time.Now()
 	//fmt.Print(".")
 	//fmt.Println(len(records))
 	// fmt.Println("The uid of the first record is: ", records[0]["uid"].(string))
@@ -32,8 +34,9 @@ func InsertFunction(tableName string, records []map[string]interface{}, edges []
 	for idx, record := range records {
 		//fmt.Println("Iterating Records.... ", ctr)
 
-		lastUID = strings.Replace(record["uid"].(string), "local-cluster", clusterName, 1) //grab uid
-		// lastUID = record["uid"].(string)
+		// lastUID = strings.Replace(record["uid"].(string), "local-cluster", clusterName, 1) //grab uid
+		lastUID = record["uid"].(string)
+		fmt.Printf("lastUID: %s for cluster %s", lastUID, clusterName)
 		properties, _ := record["properties"].(map[string]interface{})
 		// fmt.Println(record["properties"])
 		//fmt.Println("len edges ", len(edges))
@@ -41,6 +44,8 @@ func InsertFunction(tableName string, records []map[string]interface{}, edges []
 		eFrom := findEdgesFrom(lastUID, edges)
 		record := &Record{TableName: tableName, UID: lastUID, Cluster: clusterName, Properties: properties}
 		batch.Queue(fmt.Sprintf("INSERT into %s values($1,$2,$3,$4,$5)", record.TableName), record.UID, record.Cluster, record.Properties, eTo, eFrom)
+		fmt.Println("")
+		fmt.Printf("TIME: %v \n\n", time.Since(start))
 		//batch.Queue(fmt.Sprintf("INSERT into %s values($1,$2,$3)", clusterName), record.UID, eTo, eFrom)
 		if idx%50 == 0 { // 50 inserts at each post
 			//fmt.Printf("Posting : %d\n", idx)
