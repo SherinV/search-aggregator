@@ -4,12 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+
+	// "glog"
+	"sync"
 	"time"
 
 	// "strings"
 
+	"github.com/golang/glog"
 	pgx "github.com/jackc/pgx/v4"
+	// pgxpool "github.com/jackc/pgx/v4/pgxpool"
 )
 
 // var pool *pgxpool.Pool //change to new variable so we can use the pool package in place of dbclient
@@ -18,6 +22,7 @@ var batch *pgx.Batch
 
 // // from benchmark:
 func InsertFunction(tableName string, records []map[string]interface{}, edges []Edge, clusterName string) {
+	wg := &sync.WaitGroup{}
 	start := time.Now()
 	//fmt.Print(".")
 	//fmt.Println(len(records))
@@ -49,36 +54,55 @@ func InsertFunction(tableName string, records []map[string]interface{}, edges []
 		//batch.Queue(fmt.Sprintf("INSERT into %s values($1,$2,$3)", clusterName), record.UID, eTo, eFrom)
 		if idx%50 == 0 { // 50 inserts at each post
 			//fmt.Printf("Posting : %d\n", idx)
-			InsertChan <- batch
+			// InsertChan <- batch
+			wg.Add(1)
+			go sendBatch(*batch, wg)
 			batch = &pgx.Batch{}
 		}
 
 	}
 	if batch.Len() > 0 {
 		fmt.Printf("Posting rest of the bucket: %d\n", batch.Len())
-		InsertChan <- batch
+		wg.Add(1)
+		go sendBatch(*batch, wg)
 		batch = &pgx.Batch{}
 	}
 }
 
 // tx.Commit(context.Background())
 
-func batchInsert(instance string) {
+// func batchInsert(instance string) {
 
-	for {
+// 	for {
 
-		batch := <-InsertChan
+// 		batch := <-InsertChan
 
-		br := database.SendBatch(context.Background(), batch) //br = batch results
-		res, err := br.Exec()
-		// fmt.Println("batch sent to pool")
-		if err != nil {
-			log.Fatal("res: ", res.RowsAffected(), "  err: ", err, batch.Len())
-		}
-		br.Close()
+// 		br := database.SendBatch(context.Background(), batch) //br = batch results
+// 		res, err := br.Exec()
+// 		// fmt.Println("batch sent to pool")
+// 		if err != nil {
+// 			log.Fatal("res: ", res.RowsAffected(), "  err: ", err, batch.Len())
+// 		}
+// 		br.Close()
 
+// 	}
+// }
+
+func sendBatch(batch pgx.Batch, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	// klog.Info("Sending batch")
+	br := Pool.SendBatch(context.Background(), &batch)
+	res, err := br.Exec()
+	if err != nil {
+		glog.Error("Error sending batch. res: ", res, "  err: ", err, batch.Len())
+
+		// TODO: Need to report the errors back.
 	}
+	// klog.Info("Batch response: ", res)
+	br.Close()
 }
+
 func findEdgesTo(sourceUID string, edges []Edge) string {
 	result := make(map[string][][]string)
 	for _, edge := range edges {

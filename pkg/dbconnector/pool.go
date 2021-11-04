@@ -53,7 +53,7 @@ func init() {
 	createTables()
 	fmt.Println("Created tables")
 
-	go batchInsert("goroutine1")
+	// go batchInsert("goroutine1")
 	//go batchInsert("goroutine2")
 
 	// if database == nil {
@@ -92,7 +92,7 @@ func createTables() {
 			}
 		} else { //  single table but not cluster sharding
 
-			database.Exec(context.Background(), "DROP TABLE resources")
+			database.Exec(context.Background(), "DROP TABLE IF EXISTS resources")
 			database.Exec(context.Background(), "CREATE TABLE IF NOT EXISTS resources (uid TEXT PRIMARY KEY, cluster TEXT, data JSONB,edgesTo TEXT,edgesFrom TEXT)")
 
 		}
